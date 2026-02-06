@@ -10,12 +10,13 @@ class Pongogo < Formula
   depends_on "python@3.12"
 
   def install
-    # Create virtual environment and install with pip
-    venv = virtualenv_create(libexec, "python3.12")
-    venv.pip_install "pongogo==0.2.3"
-    
-    # Link binaries
-    bin.install_symlink Dir[libexec/"bin/pongogo*"]
+    virtualenv_install_with_resources
+  end
+
+  def post_install
+    # Install dependencies after venv is created
+    system libexec/"bin/pip", "install", "typer>=0.9.0", "rich>=13.0.0", 
+           "pyyaml>=6.0", "fastmcp>=1.0.0", "pydantic>=2.0.0", "watchdog>=3.0.0"
   end
 
   test do

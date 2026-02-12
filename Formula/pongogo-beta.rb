@@ -1,8 +1,8 @@
 class PongogoBeta < Formula
   desc "AI agent knowledge routing for Claude Code"
   homepage "https://pongogo.com"
-  url "https://get.pongogo.com/releases/pongogo-0.3.21-beta.9.tar.gz"
-  sha256 "885a37e7ce110e285967e051ca02a2bae97e09eaa0652e018e1b31422e40f65f"
+  url "https://get.pongogo.com/releases/pongogo-0.3.22-beta.1.tar.gz"
+  sha256 "affa9fa427325cb2bd16a64258a6a5ba8207e8e6da1fe14006a2846244ec2d72"
   license "MIT"
 
   depends_on "python@3.12"

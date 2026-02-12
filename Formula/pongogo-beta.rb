@@ -1,17 +1,11 @@
 class PongogoBeta < Formula
   desc "AI agent knowledge routing for Claude Code"
   homepage "https://pongogo.com"
-  url "https://get.pongogo.com/releases/pongogo-0.3.20-beta.2.tar.gz"
-  sha256 "cf657a57823f7575df9da8db8aae414a3b2ad4d2f9544497393a34b81ba4fd65"
+  url "https://get.pongogo.com/releases/pongogo-0.3.21-beta.8.tar.gz"
+  sha256 "adf604c784c7db0f57c92157b280ccc6c2637b3ccefaf84c0972a2bd2bce071a"
   license "MIT"
 
   depends_on "python@3.12"
-
-  # Skip Homebrew dylib ID fixup for Python native extensions.
-  # Python uses dlopen() (not Mach-O dyld), so rpath rewriting is
-  # unnecessary and fails on extensions with insufficient header
-  # padding (pydantic_core, cryptography).
-  skip_clean "libexec"
 
   def install
     python3 = "python3.12"
@@ -28,8 +22,40 @@ class PongogoBeta < Formula
     system libexec/"bin/pip", "uninstall", "-y",
       "cryptography", "cffi", "pycparser"
 
+    # Move Python native extension .so files OUT of the Cellar tree
+    # to prevent Homebrew's dylib fixup from processing them.
+    # Homebrew scans ALL files by Mach-O magic bytes (not extension),
+    # so files must be physically outside the Cellar during fixup.
+    # PyPI wheels (esp. Rust-built pydantic_core) have minimal
+    # Mach-O header padding; Homebrew's long Cellar path rewrite fails.
+    # Python uses dlopen() so dylib IDs are irrelevant.
+    # Restored in post_install (which runs after fixup).
+    staging = Pathname.new(Dir.tmpdir)/"pongogo-brew-staging-#{version}"
+    staging.mkpath
+    Dir.glob(libexec/"lib/**/*.so") do |f|
+      rel = Pathname.new(f).relative_path_from(libexec)
+      target = staging/rel
+      target.dirname.mkpath
+      FileUtils.mv(f, target)
+    end
+
     # Link the entry point scripts to bin
     bin.install_symlink Dir[libexec/"bin/pongogo*"]
+  end
+
+  def post_install
+    # Restore .so files from staging (moved out during install
+    # to bypass Homebrew's Mach-O dylib fixup)
+    staging = Pathname.new(Dir.tmpdir)/"pongogo-brew-staging-#{version}"
+    if staging.exist?
+      Dir.glob(staging/"**/*.so") do |f|
+        rel = Pathname.new(f).relative_path_from(staging)
+        target = libexec/rel
+        target.dirname.mkpath
+        FileUtils.mv(f, target)
+      end
+      staging.rmtree
+    end
   end
 
   test do
